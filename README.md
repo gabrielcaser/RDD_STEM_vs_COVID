@@ -8,5 +8,5 @@
 - Por fim, utilizando R, rodo um modelo de Regrssão Discontínua (RDD) para estimar o impacto de um munício eleger um candidato STEM no número de casos e mortes por COVID (BRASIL-IO)
 
 
-Fontes Primárias: RAIS, Base dos Dados, Brasil IO
-Fontes Secundárias: TSE, Secretarias Estaduais de Saúde
+  - Fontes Primárias: RAIS, Base dos Dados, Brasil IO
+  - Fontes Secundárias: TSE, Secretarias Estaduais de Saúde
