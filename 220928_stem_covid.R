@@ -1,48 +1,5 @@
 
 
-# TODO --------------------------------------------------------------------
-
-## 15/06 - Descobrir porque está dando errado
-### DONE - ver se estou construindo a variável "hospitalizado" de forma errada: pensar na variável que estou usando do SIVEP (talvez seja NU_NOTIF == 2/3  ou talvez HOSPITAL == 1)
-### DONE - hosp = HOSP == 1; e vendo coorte 2021 só para novas internações/mortes (ESTOU ACHANDO RESULTADOS!!!)
-### DONE - Posso testar também incluindo dados sem limite mínimo para coorte 2021 (Resultados parecidos com o recorte só para novas internações)
-### DONE - Testar incluindo casos não confirmados de SRAG
-### DONE - Olhar na Sivep_full os municípios que estão com muitas mortes e NA hospitalizações (e agora também em cases). Tem algo errado, estou com menos observações até para casos! Ver o caso do id_municipio = 354580.
-### DONE - Incluir mais preifeitos como STEM com a variável de "ocupação" do TSE -> não deu em nada
-### DONE - Rodar com código do Jorge
-### DONE - Tirar o limite de dif_votos da RAIS e puxar todos os candidatos STEM (vai ajudar no bandwithch selector)
-### DONE - Descrever resultados de casos, hosp e deaths no Overleaf
-### DONE - Ir fazendo dados e introdução enquanto espero conseguir os dados com o bdw correto da RAIS
-### DONE - Rodar RAIS para 2016 e rodar no R
-### DONE - Estados - Fazer df no python com os empregos de todos os prefeitos eleitos
-### DONE - Ver com Jorge como calcular o real impacto (coeficiente / média ?)
-### DONE - Tenure - Investigar porque tem uns caras de tenure == 0 e stem_job == 1
-### DONE - Rodar com efeitos fixos para Estados (ver com Jorge como fazer) com base em Bruce (et al, 2021)
-### TODO - Sugestão carol: rodar tirando observações (escolaridade, médicos, reeleitos) e ver se a magnitude e sinal do efeito se mantêm parecidos. Isso vai funcionar como um teste de rigidez, mais o que eu apresento no paper são os resultados sem controle e com a amostra completa
-### TODO - Dummy - # tenho que criar uma dummy em 2020 para ver se o município era stem ou não em 2016 e com isso ver se a alta dos indicadores fizeram os municipios escolherem prefeitos stem
-### DONE - Ver com mortes e hospitalizações a partir de 2021
-### DOING - Tenure - tenho que somar só a última vez que o cara trabalhou na empresa, porque agora estou somando várias somas, por isso está aparencendo gente trabalhando 400 anos com STEM (pedir ajuda Fabi e depois Heitor)
-### TODO - ESTADOS: resolver problema do mapa de estados nulo
-
-# Dúvidas -----------------------------------------------------------------
-
-## OK - Tem como rodar rdd para o 2 turno? -> Teoricamente sim, mas vai dar muito trabalho e Jorge só cortou da amostra
-## OK - Por que fazer interação entre X e T? Como colocar essa interação usando rdrobust? -> Não precisa ficar fazendo isso na mão! É só rodar o rdrobust com X e Y e ele já faz tudo isso! Além disso, posso só botar a variável de Higher education como controle!
-## OK Coluna CO_MUN_RES com 5603 observações. Significa que existem municípios a mais? Como concertar? -> Aparentemente são algumas sub-regiões, como "brasilia - Asa sul")
-## Se der ruim o RDD, seria possível rodar um DiD por conta do poder estístico?
-## OK - BASELINE - conversar com Jorge para ver o que faço a respeito do baseline com bws...
-## OUTLIERS - RO aparece com um monte de profissionais de 'Programador de sistemas de informação'. Teria como refinar minha medida STEM?
-
-# Observações -------------------------------------------------------------
-## 15/06 - A história parece ser que os candidatos STEM tiveram efeito em 2021, mas não em 2020.
-## 17/06 - Achei alguns efeitos para mortes e hospitalizações em julho de 2020, mas não persistem até dezembro de 2020
-## 20/06 - Falei com Jorge e descobri muitas coisas. O ideal é usar o rdrobust, mas quando uso só a minha definição da RAIS ta dando ruim por causa do meu downlaod da RAIS. Também criei definições de STEM diferentes (usando dados do TSE) e consegui aumentar bastante a amostra e o poder estatístico.
-## 24/06 - Com as novas observações com todos os bdwt os resultados estão muito mais poderosos com a classificação original de stem_job!! Vitória!!
-## 12/07 - Com bdth abaixo de 9% eu não encontro diferenças nas baseline characteristics, mas continuo achando efeito em casos. Perco, porém, todo o efeito para hospitalizações e mortes.
-## 13/07 - Rodei com mortes do coorte de 2020 só considerando observações após 2021. Incluí novo df com tenure refinado. Criei rdd4 e stem_job_4 filtrando para tenure >= 12. O problema da minha medida STEM é que ela fica pegando uma porrada de professor do EM que deve ser de educação física
-## 15/07 - Falei com Jorge e ele pediu para eu rodar t-tests com as janelas ótimas e incluir as variáveis que estavam dando diferente na equação. O problema é que já fiz isso e elas tiraram os efeitos para hospitalizações e mortes, só consigo manter para casos.
-## Tentando rodar no Git
-
 ## Libraries ---------------------------------------------------------------
 
 #library("basedosdados")
@@ -772,169 +729,147 @@ sivep <- sivep %>%
 
 
 
-# Libraries ---------------------------------------------------------------
-
-#library("basedosdados")
-library("readstata13")
-library("stargazer")
-library("gt")
-library("modelsummary")
-library("rdrobust")
-library("rddtools")
-library("plyr")
-library("sf")
-library("rio")
-library("readr")
-library("stringr")
-library("tidyverse")
-library("readxl")
-
-# Setting -----------------------------------------------------------------
-
-setwd("C:/Users/GabrielCaserDosPasso/Documents/RAIS")
-
-
 # Oppening RDD Database ----------------------------------------------------
 
-df <- readRDS("Dados/output/220927_base_rdd_covid_stem.rds")
+#df <- readRDS("Dados/output/220927_base_rdd_covid_stem.rds")
 
 
-## Creating dataframe with multiple coortes --------------------------------------------------------
-#
-#df <- read.csv("Dados/output/220921_base_rdd_covid_stem_2016.csv", sep = ";") # source: https://brasil.io/dataset/covid19/caso/
-#
-#df2 <- read.csv("Dados/output/220921_base_rdd_covid_stem_2020.csv", sep = ";") # source: https://brasil.io/dataset/covid19/caso/
-#
-##df <- rbind(df, df2) # por enquanto elas têm colunas diferentes, então tenho que usar outro comando que não o rbind
-#df <- rbind.fill(df, df2)
-#
-#df_baseline <- read.csv("Dados/input/220718_stem_baseline_vaccination_municipialities.csv", sep = ";") # source: https://basedosdados.org/dataset/mundo-onu-adh?bdm_table=brasil
-#
-#df_baseline$id_municipio = substr(df_baseline$id_municipio,1,6)
-#
-## Merging the data --------------------------------------------------------
-#
-#
-#df <- df %>% 
-#  dplyr::rename(coorte = ano) %>% 
-#  mutate(id_municipio_2 = id_municipio, id_municipio = substr(id_municipio_2,1,6))
-#
-#df <- left_join(df, sivep, by = c("id_municipio","coorte"))
-#dim(df)
-#
-#df <- left_join(df, df_baseline, by = c("id_municipio"))
-#dim(df)
-#
-#
-#
-#
-## Joining with cases 2021
-#
-#df <- df %>% 
-#  rename(confirmed_per_100k_inhabitants_total = confirmed_per_100k_inhabitants)
-#
-#df_cases <- read.csv("Dados/output/220809_confirmed_cases_2021.csv", sep = ";") # source: https://basedosdados.org/dataset/mundo-onu-adh?bdm_table=brasil
-#
-#df_cases$id_municipio = substr(df_cases$id_municipio,1,6)
-#
-#df_cases$coorte = 2020
-#
-#df_cases <- df_cases %>% 
-#  summarise(id_municipio, confirmed_per_100k_inhabitants, coorte)
-#
-#df <- left_join(df, df_cases, by = c("id_municipio","coorte"))
-#
-#
-#df$confirmed_per_100k_inhabitants = ifelse(df$coorte == 2016, df$confirmed_per_100k_inhabitants_total, df$confirmed_per_100k_inhabitants)
-#
-#df %>%
-# mutate(confirmed_per_100k_inhabitants_previous_year = confirmed_per_100k_inhabitants_total - confirmed_per_100k_inhabitants) %>% 
-#  summarise(id_municipio, coorte, confirmed_per_100k_inhabitants, confirmed_per_100k_inhabitants_total, confirmed_per_100k_inhabitants_previous_year) %>% 
-#  arrange(desc(coorte))
-#
-## Adding Health data for baseline
-#
-#df_health <- read.csv2("Dados/input/220922_28_indicadores_mun_data_ieps_2015.csv", sep = ",") # source: https://iepsdata.org.br/data-downloads
-#
-#df_health <- df_health %>% 
-#  rename(id_municipio = codmun)
-#
-#df_health <- df_health %>% 
-#  summarise(id_municipio, desp_tot_saude_pc_uf_def, tx_med_ch, pct_desp_recp_saude_mun, cob_esf, tx_leito_sus)
-#
-#df_health$id_municipio <- as.character(df_health$id_municipio)
-#
-#df <- left_join(df, df_health, by = c("id_municipio"))
-#dim(df)
-#
-#
-## Adding political scores
-### source: https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/8USPML/20URAD&version=2.0
-#
-#df_political <- read.csv("Dados/input/223007_partidos_ano_v2018.csv", sep = ";") 
-#
-#df_political <- df_political %>% 
-#  filter(ANO_ELEICAO == 2016) %>% 
-#  mutate(sigla_partido = recode(SIGLA_PARTIDO,
-#                                "SD" = "SOLIDARIEDADE",
-#                                "PPS" = "CIDADANIA",
-#                                "PRB" = "REPUBLICANOS",
-#                                "PMDB" = "MDB",
-#                                "PEN" = "PATRIOTA",
-#                                "PR" = "PL",
-#                                "PTN" = "PODE",
-#                                "PSDC" = "DC",
-#                                "PT do B" = "AVANTE",
-#                                .default = SIGLA_PARTIDO)) %>% 
-#  transmute(sigla_partido, ideology_2018 = IDEO_IMPUTED)
-#
-#df <- left_join(df, df_political, by = 'sigla_partido')
-#
-## Adding undergraduate degree database
-#
-#df_formacao <- read.csv("Dados/output/220923_curso_stem.csv", sep = ",")
-#
-#df_formacao$graduacao_stem = df_formacao$curso_stem
-#
-#df_formacao <- df_formacao %>%
-#  summarise(cpf, graduacao_stem)
-#
-#df_formacao <- df_formacao %>% 
-#  distinct()
-#
-#df <- left_join(df, df_formacao, by = 'cpf')
-#
-#df %>% 
-#  group_by(cpf) %>% 
-#  count() %>% 
-#  arrange(desc(n))
-#
-## Adding NFI database
-#
-#df_nfi <- read_excel("Dados/input/220927_cnm_medidas_sanitarias.xlsx")
-#
-#as.numeric(as.factor(df_nfi$`Q1. Barreiras sanitárias (posto de monitoramento de entrada e saída de pessoas no Município)`)) - 1
-#
-#df_nfi <- df_nfi %>% 
-#  transmute(id_municipio = substr(Ibge,1,6),
-#            barreiras_sanitarias = as.numeric(as.factor(df_nfi$`Q1. Barreiras sanitárias (posto de monitoramento de entrada e saída de pessoas no Município)`)) - 1,
-#            mascaras = as.numeric(as.factor(df_nfi$`Q4. Uso obrigatório de máscaras faciais.`)) - 1,
-#            restricao_atv_nao_essenciais = as.numeric(as.factor(df_nfi$`Q3. Medidas de isolamento social, permitindo APENAS serviços essenciais.`)) - 1,
-#            restricao_circulacao = as.numeric(as.factor(df_nfi$`Q2. Medidas restritivas para diminuição da circulação/aglomeração de pessoas.`)) - 1,
-#            restricao_transporte_publico = as.numeric(as.factor(df_nfi$`Q5. Foram adotadas medidas de redução na oferta de transporte público?`)) - 1)
-#
-#df_nfi <- df_nfi %>%
-#  group_by(id_municipio) %>% 
-#  mutate(total_nfi = sum(barreiras_sanitarias, mascaras, restricao_atv_nao_essenciais, restricao_circulacao, restricao_transporte_publico, na.rm = TRUE)) %>% 
-#  ungroup()
-#
-#summary(df_nfi)
-#
-#df <- left_join(df, df_nfi, by = c("id_municipio"))
-#
-##Saving the database -----------------------------------------------------
-#
-#saveRDS(df, "Dados/Output/220927_base_rdd_covid_stem.rds")
+# Creating dataframe with multiple coortes --------------------------------------------------------
+
+df <- read.csv("Dados/output/220921_base_rdd_covid_stem_2016.csv", sep = ";") # source: https://brasil.io/dataset/covid19/caso/
+
+df2 <- read.csv("Dados/output/220921_base_rdd_covid_stem_2020.csv", sep = ";") # source: https://brasil.io/dataset/covid19/caso/
+
+#df <- rbind(df, df2) # por enquanto elas têm colunas diferentes, então tenho que usar outro comando que não o rbind
+df <- rbind.fill(df, df2)
+
+df_baseline <- read.csv("Dados/input/220718_stem_baseline_vaccination_municipialities.csv", sep = ";") # source: https://basedosdados.org/dataset/mundo-onu-adh?bdm_table=brasil
+
+df_baseline$id_municipio = substr(df_baseline$id_municipio,1,6)
+
+# Merging the data --------------------------------------------------------
+
+
+df <- df %>% 
+  dplyr::rename(coorte = ano) %>% 
+  mutate(id_municipio_2 = id_municipio, id_municipio = substr(id_municipio_2,1,6))
+
+df <- left_join(df, sivep, by = c("id_municipio","coorte"))
+dim(df)
+
+df <- left_join(df, df_baseline, by = c("id_municipio"))
+dim(df)
+
+
+
+
+# Joining with cases 2021
+
+df <- df %>% 
+  rename(confirmed_per_100k_inhabitants_total = confirmed_per_100k_inhabitants)
+
+df_cases <- read.csv("Dados/output/220809_confirmed_cases_2021.csv", sep = ";") # source: https://basedosdados.org/dataset/mundo-onu-adh?bdm_table=brasil
+
+df_cases$id_municipio = substr(df_cases$id_municipio,1,6)
+
+df_cases$coorte = 2020
+
+df_cases <- df_cases %>% 
+  summarise(id_municipio, confirmed_per_100k_inhabitants, coorte)
+
+df <- left_join(df, df_cases, by = c("id_municipio","coorte"))
+
+
+df$confirmed_per_100k_inhabitants = ifelse(df$coorte == 2016, df$confirmed_per_100k_inhabitants_total, df$confirmed_per_100k_inhabitants)
+
+df %>%
+ mutate(confirmed_per_100k_inhabitants_previous_year = confirmed_per_100k_inhabitants_total - confirmed_per_100k_inhabitants) %>% 
+  summarise(id_municipio, coorte, confirmed_per_100k_inhabitants, confirmed_per_100k_inhabitants_total, confirmed_per_100k_inhabitants_previous_year) %>% 
+  arrange(desc(coorte))
+
+# Adding Health data for baseline
+
+df_health <- read.csv2("Dados/input/220922_28_indicadores_mun_data_ieps_2015.csv", sep = ",") # source: https://iepsdata.org.br/data-downloads
+
+df_health <- df_health %>% 
+  rename(id_municipio = codmun)
+
+df_health <- df_health %>% 
+  summarise(id_municipio, desp_tot_saude_pc_uf_def, tx_med_ch, pct_desp_recp_saude_mun, cob_esf, tx_leito_sus)
+
+df_health$id_municipio <- as.character(df_health$id_municipio)
+
+df <- left_join(df, df_health, by = c("id_municipio"))
+dim(df)
+
+
+# Adding political scores
+## source: https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/8USPML/20URAD&version=2.0
+
+df_political <- read.csv("Dados/input/223007_partidos_ano_v2018.csv", sep = ";") 
+
+df_political <- df_political %>% 
+  filter(ANO_ELEICAO == 2016) %>% 
+  mutate(sigla_partido = recode(SIGLA_PARTIDO,
+                                "SD" = "SOLIDARIEDADE",
+                                "PPS" = "CIDADANIA",
+                                "PRB" = "REPUBLICANOS",
+                                "PMDB" = "MDB",
+                                "PEN" = "PATRIOTA",
+                                "PR" = "PL",
+                                "PTN" = "PODE",
+                                "PSDC" = "DC",
+                                "PT do B" = "AVANTE",
+                                .default = SIGLA_PARTIDO)) %>% 
+  transmute(sigla_partido, ideology_2018 = IDEO_IMPUTED)
+
+df <- left_join(df, df_political, by = 'sigla_partido')
+
+# Adding undergraduate degree database
+
+df_formacao <- read.csv("Dados/output/220923_curso_stem.csv", sep = ",")
+
+df_formacao$graduacao_stem = df_formacao$curso_stem
+
+df_formacao <- df_formacao %>%
+  summarise(cpf, graduacao_stem)
+
+df_formacao <- df_formacao %>% 
+  distinct()
+
+df <- left_join(df, df_formacao, by = 'cpf')
+
+df %>% 
+  group_by(cpf) %>% 
+  count() %>% 
+  arrange(desc(n))
+
+# Adding NFI database
+
+df_nfi <- read_excel("Dados/input/220927_cnm_medidas_sanitarias.xlsx")
+
+as.numeric(as.factor(df_nfi$`Q1. Barreiras sanitárias (posto de monitoramento de entrada e saída de pessoas no Município)`)) - 1
+
+df_nfi <- df_nfi %>% 
+  transmute(id_municipio = substr(Ibge,1,6),
+            barreiras_sanitarias = as.numeric(as.factor(df_nfi$`Q1. Barreiras sanitárias (posto de monitoramento de entrada e saída de pessoas no Município)`)) - 1,
+            mascaras = as.numeric(as.factor(df_nfi$`Q4. Uso obrigatório de máscaras faciais.`)) - 1,
+            restricao_atv_nao_essenciais = as.numeric(as.factor(df_nfi$`Q3. Medidas de isolamento social, permitindo APENAS serviços essenciais.`)) - 1,
+            restricao_circulacao = as.numeric(as.factor(df_nfi$`Q2. Medidas restritivas para diminuição da circulação/aglomeração de pessoas.`)) - 1,
+            restricao_transporte_publico = as.numeric(as.factor(df_nfi$`Q5. Foram adotadas medidas de redução na oferta de transporte público?`)) - 1)
+
+df_nfi <- df_nfi %>%
+  group_by(id_municipio) %>% 
+  mutate(total_nfi = sum(barreiras_sanitarias, mascaras, restricao_atv_nao_essenciais, restricao_circulacao, restricao_transporte_publico, na.rm = TRUE)) %>% 
+  ungroup()
+
+summary(df_nfi)
+
+df <- left_join(df, df_nfi, by = c("id_municipio"))
+
+#Saving the database -----------------------------------------------------
+
+saveRDS(df, "Dados/Output/220927_base_rdd_covid_stem.rds")
 
 # Choosing the definition of STEM -----------------------------------------
 
@@ -1162,63 +1097,6 @@ glance.rdrobust <- function(model, ...) {
 
 
 # Creating state dummies for fixed effects --------------------------------
-
-
-
-estados = unique(df$sigla_uf)
-
-
-df$SP <- ifelse(df$sigla_uf == 'SP', 1, 0)
-df$MG <- ifelse(df$sigla_uf == 'MG', 1, 0)
-df$ES <- ifelse(df$sigla_uf == 'ES', 1, 0)
-df$GO <- ifelse(df$sigla_uf == 'GO', 1, 0)
-df$PI <- ifelse(df$sigla_uf == 'PI', 1, 0)
-df$MA <- ifelse(df$sigla_uf == 'MA', 1, 0)
-df$RJ <- ifelse(df$sigla_uf == 'RJ', 1, 0)
-df$RO <- ifelse(df$sigla_uf == 'RO', 1, 0)
-df$RS <- ifelse(df$sigla_uf == 'RS', 1, 0)
-df$RN <- ifelse(df$sigla_uf == 'RN', 1, 0)
-df$PB <- ifelse(df$sigla_uf == 'PB', 1, 0)
-df$PR <- ifelse(df$sigla_uf == 'PR', 1, 0)
-df$BA <- ifelse(df$sigla_uf == 'BA', 1, 0)
-df$PE <- ifelse(df$sigla_uf == 'PE', 1, 0)
-df$PA <- ifelse(df$sigla_uf == 'PA', 1, 0)
-df$CE <- ifelse(df$sigla_uf == 'CE', 1, 0)
-df$SC <- ifelse(df$sigla_uf == 'SC', 1, 0)
-df$MT <- ifelse(df$sigla_uf == 'MT', 1, 0)
-df$SE <- ifelse(df$sigla_uf == 'SE', 1, 0)
-df$AC <- ifelse(df$sigla_uf == 'AC', 1, 0)
-df$MS <- ifelse(df$sigla_uf == 'MS', 1, 0)
-df$AL <- ifelse(df$sigla_uf == 'AL', 1, 0)
-df$TO <- ifelse(df$sigla_uf == 'TO', 1, 0)
-df$RR <- ifelse(df$sigla_uf == 'RR', 1, 0)
-df$AP <- ifelse(df$sigla_uf == 'AP', 1, 0)
-
-fixed = cbind(df$SP,
-              df$MG,
-              df$ES,
-              df$GO,
-              df$PI,
-              df$MA,
-              df$RJ,
-              df$RO,
-              df$RS,
-              df$RN,
-              df$PB,
-              df$PR,
-              df$BA,
-              df$PE,
-              df$PA,
-              df$CE,
-              df$SC,
-              df$MT,
-              df$SE,
-              df$AC,
-              df$MS,
-              df$AL,
-              df$TO,
-              df$RR,
-              df$AP)
 
 
 state.f = factor(df$sigla_uf)
