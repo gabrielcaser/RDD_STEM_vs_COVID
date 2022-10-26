@@ -1,4 +1,16 @@
+#During the COVID-19 crisis, several politicians used the "I'm following science" argument to justify their public policy decisions.
 
+#My premise is that mayors who have worked throughout their lives in science and technology and related fields, known as STEM (Science, Technology, Engineering, and Math), would be the most likely to "follow the science" in their decision-making;
+
+#I hypothesize that mayors with a "STEM background" would respond better to the challenges of the pandemic, reducing negative indicators, such as contagion and deaths;
+
+#The following document seeks to create a suitable data frame for performing a data frame test of this hypothesis. Therefore, using Python, I searched through the TSE database for candidates elected in 2016 and 2020 who have worked with STEM throughout their lives (RAIS).
+
+#Finally, using R and a Discontinuous Regression (RDD) model, I estimate the impact of electing a STEM candidate on cases and deaths caused by COVID. I found that having a STEM background did cause a lower rate of infections and deaths caused by COVID.
+
+#Primary Sources: RAIS, Database, Brazil IO
+
+#Secondary Sources: TSE, State Health Departments
 
 ## Libraries ---------------------------------------------------------------
 
